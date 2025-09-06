@@ -10,8 +10,8 @@ export const createConversation = async (
     throw new Error("API token is required. Please enter your Tavus API token.");
   }
   
-  const persona_id = "p25e042a1eb6";
-  const replica_id = "rf4703150052";
+  const persona_id = import.meta.env.VITE_PERSONA_ID || "p25e042a1eb6";
+  const replica_id = import.meta.env.VITE_REPLICA_ID || "rf4703150052";
   
   console.log("Creating conversation with:");
   console.log("Token:", token ? `${token.substring(0, 8)}...` : "No token");

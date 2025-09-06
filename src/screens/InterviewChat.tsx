@@ -92,10 +92,11 @@ export const InterviewChat: React.FC = () => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowForm(false);
-    setIsInitializing(true);
     // Clear previous conversation data
     setConversationMessages([]);
     setEvaluationMetrics(null);
+    // Start interview automatically
+    setIsInitializing(true);
   };
 
   // Initialize conversation with better error handling
@@ -118,6 +119,7 @@ export const InterviewChat: React.FC = () => {
           console.log("Conversation created successfully:", newConversation.conversation_id);
           setConversation(newConversation);
           setConnectionError(null);
+          setErrorType(null);
         } catch (error: any) {
           console.error("Failed to create conversation:", error);
           
@@ -127,13 +129,15 @@ export const InterviewChat: React.FC = () => {
           } else {
             const errorMessage = error.message || "Unknown error occurred";
             if (errorMessage.includes("Invalid persona_id")) {
-              setConnectionError(`Persona Error: The persona ID 'p25e042a1eb6' is not available in your Tavus account. Please check your Tavus dashboard at https://platform.tavus.io/personas to see available personas.`);
+              setConnectionError(`Persona Error: The persona ID is not available in your Tavus account. Please check your environment variables or Tavus dashboard at https://platform.tavus.io/personas to see available personas.`);
+              setErrorType("persona_error");
             } else if (errorMessage.includes("Invalid API token")) {
               setConnectionError("Invalid API token. Please check your Tavus API key and try again.");
+              setErrorType("token_error");
             } else {
               setConnectionError(`Connection failed: ${errorMessage}`);
+              setErrorType("connection_error");
             }
-            setErrorType("connection_error");
           }
         } finally {
           setIsInitializing(false);
@@ -141,10 +145,10 @@ export const InterviewChat: React.FC = () => {
       }
     };
 
-    if (!showForm && !conversation) {
+    if (!showForm && !conversation && userInfo.name) {
       initializeConversation();
     }
-  }, [conversation, showForm, userInfo, setConversation]);
+  }, [conversation, showForm, userInfo.name, setConversation]);
 
   // Handle participant joining
   useEffect(() => {
@@ -409,8 +413,16 @@ export const InterviewChat: React.FC = () => {
   const retryConnection = () => {
     setConnectionError(null);
     setErrorType(null);
-    setIsInitializing(true);
     setConversation(null);
+    setIsInitializing(true);
+    
+    // Automatically retry the connection
+    setTimeout(() => {
+      if (userInfo.name && !conversation) {
+        // This will trigger the useEffect to reinitialize
+        setShowForm(false);
+      }
+    }, 100);
   };
 
   if (showForm) {
@@ -567,21 +579,22 @@ export const InterviewChat: React.FC = () => {
                 <div className="text-center max-w-md">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Connection Issue</h3>
                   <p className="text-gray-600 mb-6">{connectionError}</p>
-                  {errorType === "credits_exhausted" ? (
+                  <div className="flex gap-3 justify-center">
                     <Button 
                       onClick={retryConnection}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
                     >
                       Retry Connection
                     </Button>
-                  ) : (
-                    <Button 
-                      onClick={retryConnection}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-                    >
-                      Retry Connection
-                    </Button>
-                  )}
+                    {(errorType === "persona_error" || errorType === "token_error") && (
+                      <Button 
+                        onClick={() => setShowForm(true)}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg"
+                      >
+                        Back to Form
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : remoteParticipantIds?.length > 0 ? (
