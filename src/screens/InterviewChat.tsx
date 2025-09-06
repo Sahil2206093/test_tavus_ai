@@ -91,23 +91,23 @@ export const InterviewChat: React.FC = () => {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted, starting interview automatically");
     setShowForm(false);
     // Clear previous conversation data
     setConversationMessages([]);
     setEvaluationMetrics(null);
-    // Start interview automatically
-    setIsInitializing(true);
   };
 
   // Initialize conversation with better error handling
   useEffect(() => {
     const initializeConversation = async () => {
-      if (!conversation && !showForm && userInfo.name) {
+      if (!conversation && !showForm && userInfo.name && !connectionError) {
+        setIsInitializing(true);
         try {
           console.log("Initializing conversation with user info:", userInfo);
           
-          // Check if token exists
-          const token = localStorage.getItem('tavus-token');
+          // Check if token exists (from env or localStorage)
+          const token = import.meta.env.VITE_TAVUS_API_TOKEN || localStorage.getItem('tavus-token');
           if (!token) {
             setConnectionError("Please enter your Tavus API token first");
             setErrorType("no_token");
@@ -145,10 +145,10 @@ export const InterviewChat: React.FC = () => {
       }
     };
 
-    if (!showForm && !conversation && userInfo.name) {
+    if (!showForm && !conversation && userInfo.name && !connectionError) {
       initializeConversation();
     }
-  }, [conversation, showForm, userInfo.name, setConversation]);
+  }, [conversation, showForm, userInfo.name, setConversation, connectionError]);
 
   // Handle participant joining
   useEffect(() => {
@@ -197,6 +197,7 @@ export const InterviewChat: React.FC = () => {
         .catch((error) => {
           console.error("Failed to join Daily call:", error);
           setConnectionError("Failed to join video call");
+          setErrorType("connection_error");
         });
     }
   }, [conversation?.conversation_url, daily]);
@@ -403,7 +404,10 @@ export const InterviewChat: React.FC = () => {
     daily?.leave();
     daily?.destroy();
     if (conversation?.conversation_id) {
-      endConversation("90679945b9fa40b4943fb8c3b64ca59e", conversation.conversation_id);
+      const token = import.meta.env.VITE_TAVUS_API_TOKEN || localStorage.getItem('tavus-token');
+      if (token) {
+        endConversation(token, conversation.conversation_id);
+      }
     }
     setConversation(null);
     clearSessionTime();
@@ -414,15 +418,7 @@ export const InterviewChat: React.FC = () => {
     setConnectionError(null);
     setErrorType(null);
     setConversation(null);
-    setIsInitializing(true);
-    
-    // Automatically retry the connection
-    setTimeout(() => {
-      if (userInfo.name && !conversation) {
-        // This will trigger the useEffect to reinitialize
-        setShowForm(false);
-      }
-    }, 100);
+    // The useEffect will automatically reinitialize when connectionError is cleared
   };
 
   if (showForm) {
@@ -586,14 +582,6 @@ export const InterviewChat: React.FC = () => {
                     >
                       Retry Connection
                     </Button>
-                    {(errorType === "persona_error" || errorType === "token_error") && (
-                      <Button 
-                        onClick={() => setShowForm(true)}
-                        className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg"
-                      >
-                        Back to Form
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>

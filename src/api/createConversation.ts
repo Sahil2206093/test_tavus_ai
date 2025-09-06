@@ -3,14 +3,14 @@ import { IConversation } from "@/types";
 export const createConversation = async (
   userInfo: any
 ): Promise<IConversation> => {
-  // Get token from localStorage
-  const token = localStorage.getItem('tavus-token');
+  // Get token from environment variables first, then localStorage
+  const token = import.meta.env.VITE_TAVUS_API_TOKEN || localStorage.getItem('tavus-token');
   
   if (!token) {
     throw new Error("API token is required. Please enter your Tavus API token.");
   }
   
-  const persona_id = import.meta.env.VITE_PERSONA_ID || "p25e042a1eb6";
+  const persona_id = import.meta.env.VITE_PERSONA_ID || "pcfe721d180f";
   const replica_id = import.meta.env.VITE_REPLICA_ID || "rf4703150052";
   
   console.log("Creating conversation with:");
