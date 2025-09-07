@@ -1,8 +1,9 @@
 export { IntroLoading } from "./IntroLoading";
 export { Outage } from "./Outage";
 export { OutOfMinutes } from "./OutOfMinutes";
-export { Intro } from "./Intro";
+export { Welcome } from "./Welcome";
 export { Instructions } from "./Instructions";
+export { Motivation } from "./Motivation";
 export { ConversationLoading } from "./ConversationLoading";
 export { Conversation } from "./Conversation";
 export { FinalScreen } from "./FinalScreen";

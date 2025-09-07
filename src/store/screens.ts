@@ -4,8 +4,9 @@ export type Screen =
   | "introLoading"
   | "outage"
   | "outOfMinutes"
-  | "intro"
+  | "welcome"
   | "instructions"
+  | "motivation"
   | "settings"
   | "interviewChat"
   | "conversation"
@@ -20,7 +21,7 @@ interface ScreenState {
 }
 
 const initialScreenState: ScreenState = {
-  currentScreen: "introLoading",
+  currentScreen: "welcome",
 };
 
 export const screenAtom = atom<ScreenState>(initialScreenState);

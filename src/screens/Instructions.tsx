@@ -1,240 +1,91 @@
-import { createConversation } from "@/api";
-import {
-  DialogWrapper,
-  AnimatedTextBlockWrapper,
-  StaticTextBlockWrapper,
-} from "@/components/DialogWrapper";
+import React from "react";
+import { useAtom } from "jotai";
 import { screenAtom } from "@/store/screens";
-import { conversationAtom } from "@/store/conversation";
-import React, { useCallback, useMemo, useState } from "react";
-import { useAtom, useAtomValue } from "jotai";
-import { AlertTriangle, Mic, Video } from "lucide-react";
-import { useDaily, useDailyEvent, useDevices } from "@daily-co/daily-react";
-import { ConversationError } from "./ConversationError";
-import zoomSound from "@/assets/sounds/zoom.mp3";
 import { Button } from "@/components/ui/button";
-import { apiTokenAtom } from "@/store/tokens";
-import { quantum } from 'ldrs';
-import gloriaVideo from "@/assets/video/gloria.mp4";
-
-// Register the quantum loader
-quantum.register();
-
-const useCreateConversationMutation = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [, setScreenState] = useAtom(screenAtom);
-  const [, setConversation] = useAtom(conversationAtom);
-  const token = useAtomValue(apiTokenAtom);
-
-  const createConversationRequest = async () => {
-    try {
-      if (!token) {
-        throw new Error("Token is required");
-      }
-      const conversation = await createConversation(token);
-      setConversation(conversation);
-      setScreenState({ currentScreen: "conversation" });
-    } catch (error) {
-      setError(error as string);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    isLoading,
-    error,
-    createConversationRequest,
-  };
-};
+import { 
+  CheckCircle, 
+  Clock, 
+  FileText, 
+  Code, 
+  RotateCcw, 
+  BarChart3 
+} from "lucide-react";
 
 export const Instructions: React.FC = () => {
-  const daily = useDaily();
-  const { currentMic, setMicrophone, setSpeaker } = useDevices();
-  const { createConversationRequest } = useCreateConversationMutation();
-  const [getUserMediaError, setGetUserMediaError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
-  const [error, setError] = useState(false);
-  const audio = useMemo(() => {
-    const audioObj = new Audio(zoomSound);
-    audioObj.volume = 0.7;
-    return audioObj;
-  }, []);
-  const [isPlayingSound, setIsPlayingSound] = useState(false);
+  const [, setScreenState] = useAtom(screenAtom);
 
-  useDailyEvent(
-    "camera-error",
-    useCallback(() => {
-      setGetUserMediaError(true);
-    }, []),
-  );
-
-  const handleClick = async () => {
-    try {
-      setIsLoading(true);
-      setIsPlayingSound(true);
-      
-      audio.currentTime = 0;
-      await audio.play();
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setIsPlayingSound(false);
-      setIsLoadingConversation(true);
-      
-      let micDeviceId = currentMic?.device?.deviceId;
-      if (!micDeviceId) {
-        const res = await daily?.startCamera({
-          startVideoOff: false,
-          startAudioOff: false,
-          audioSource: "default",
-        });
-        // @ts-expect-error deviceId exists in the MediaDeviceInfo
-        const isDefaultMic = res?.mic?.deviceId === "default";
-        // @ts-expect-error deviceId exists in the MediaDeviceInfo
-        const isDefaultSpeaker = res?.speaker?.deviceId === "default";
-        // @ts-expect-error deviceId exists in the MediaDeviceInfo
-        micDeviceId = res?.mic?.deviceId;
-
-        if (isDefaultMic) {
-          if (!isDefaultMic) {
-            setMicrophone("default");
-          }
-          if (!isDefaultSpeaker) {
-            setSpeaker("default");
-          }
-        }
-      }
-      if (micDeviceId) {
-        await createConversationRequest();
-      } else {
-        setGetUserMediaError(true);
-      }
-    } catch (error) {
-      console.error(error);
-      setError(true);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingConversation(false);
-    }
+  const handleReady = () => {
+    setScreenState({ currentScreen: "motivation" });
   };
 
-  if (isPlayingSound || isLoadingConversation) {
-    return (
-      <DialogWrapper>
-        <video
-          src={gloriaVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="fixed inset-0 h-full w-full object-cover"
-        />
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-        <AnimatedTextBlockWrapper>
-          <div className="flex flex-col items-center justify-center gap-4">
-            <l-quantum
-              size="45"
-              speed="1.75"
-              color="white"
-            ></l-quantum>
-          </div>
-        </AnimatedTextBlockWrapper>
-      </DialogWrapper>
-    );
-  }
-
-  if (error) {
-    return <ConversationError onClick={handleClick} />;
-  }
+  const instructions = [
+    {
+      icon: <CheckCircle className="size-6 text-green-500" />,
+      text: "You can attempt the interview 3–4 times in a day."
+    },
+    {
+      icon: <Clock className="size-6 text-blue-500" />,
+      text: "There is a timer to show how much time the interview is going."
+    },
+    {
+      icon: <FileText className="size-6 text-purple-500" />,
+      text: "Be honest with your answers."
+    },
+    {
+      icon: <Code className="size-6 text-orange-500" />,
+      text: "Questions will be HR + Technical mixed."
+    },
+    {
+      icon: <RotateCcw className="size-6 text-red-500" />,
+      text: "No back option once you answer a question."
+    },
+    {
+      icon: <BarChart3 className="size-6 text-indigo-500" />,
+      text: "At the end, you'll get a short feedback/score."
+    }
+  ];
 
   return (
-    <DialogWrapper>
-      <video
-        src={gloriaVideo}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="fixed inset-0 h-full w-full object-cover"
-      />
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-      <AnimatedTextBlockWrapper>
-        <h1 
-          className="mb-4 pt-1 text-center text-3xl sm:text-4xl lg:text-5xl font-semibold"
-          style={{
-            fontFamily: 'Source Code Pro, monospace'
-          }}
-        >
-          <span className="text-white">See AI?</span>{" "}
-          <span style={{
-            color: '#9EEAFF'
-          }}>Act Natural.</span>
-        </h1>
-        <p className="max-w-[650px] text-center text-base sm:text-lg text-gray-400 mb-12">
-          Have a face-to-face conversation with an AI so real, it feels human—an intelligent agent ready to listen, respond, and act across countless use cases.
-        </p>
-        <Button
-          onClick={handleClick}
-          className="relative z-20 flex items-center justify-center gap-2 rounded-3xl border border-[rgba(255,255,255,0.3)] px-8 py-2 text-sm text-white transition-all duration-200 hover:text-primary mb-12 disabled:opacity-50"
-          disabled={isLoading}
-          style={{
-            height: '48px',
-            transition: 'all 0.2s ease-in-out',
-            backgroundColor: 'rgba(0,0,0,0.3)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(34, 197, 254, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <Video className="size-5" />
-          Start Video Chat
-          {getUserMediaError && (
-            <div className="absolute -top-1 left-0 right-0 flex items-center gap-1 text-wrap rounded-lg border bg-red-500 p-2 text-white backdrop-blur-sm">
-              <AlertTriangle className="text-red size-4" />
-              <p>
-                To chat with the AI, please allow microphone access. Check your
-                browser settings.
-              </p>
-            </div>
-          )}
-        </Button>
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:gap-8 text-gray-400 justify-center">
-          <div className="flex items-center gap-3 bg-[rgba(0,0,0,0.2)] px-4 py-2 rounded-full">
-            <Mic className="size-5 text-primary" />
-            Mic access is required
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="max-w-3xl w-full">
+        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-gray-100">
+          {/* Heading */}
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8 text-center">
+            Instructions Before You Begin
+          </h1>
+
+          {/* Instructions List */}
+          <div className="space-y-6 mb-10">
+            {instructions.map((instruction, index) => (
+              <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                <div className="flex-shrink-0 mt-1">
+                  {instruction.icon}
+                </div>
+                <p className="text-gray-700 text-lg leading-relaxed">
+                  {instruction.text}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-3 bg-[rgba(0,0,0,0.2)] px-4 py-2 rounded-full">
-            <Video className="size-5 text-primary" />
-            Camera access is required
+
+          {/* Note */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
+            <p className="text-blue-800 text-center italic">
+              "Treat it like a real interview experience."
+            </p>
+          </div>
+
+          {/* Ready Button */}
+          <div className="text-center">
+            <Button
+              onClick={handleReady}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              I'm Ready → Start Interview
+            </Button>
           </div>
         </div>
-        <span className="absolute bottom-6 px-4 text-sm text-gray-500 sm:bottom-8 sm:px-8 text-center">
-          By starting a conversation, I accept the{' '}
-          <a href="#" className="text-primary hover:underline">Terms of Use</a> and acknowledge the{' '}
-          <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
-        </span>
-      </AnimatedTextBlockWrapper>
-    </DialogWrapper>
-  );
-};
-
-export const PositiveFeedback: React.FC = () => {
-  return (
-    <DialogWrapper>
-      <AnimatedTextBlockWrapper>
-        <StaticTextBlockWrapper
-          imgSrc="/images/positive.png"
-          title="Great Conversation!"
-          titleClassName="sm:max-w-full bg-[linear-gradient(91deg,_#43BF8F_16.63%,_#FFF_86.96%)]"
-          description="Thanks for the engaging discussion. Feel free to come back anytime for another chat!"
-        />
-      </AnimatedTextBlockWrapper>
-    </DialogWrapper>
+      </div>
+    </div>
   );
 };

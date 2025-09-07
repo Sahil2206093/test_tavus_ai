@@ -6,6 +6,9 @@ import {
   IntroLoading,
   Outage,
   OutOfMinutes,
+  Welcome,
+  Instructions,
+  Motivation,
   InterviewChat,
   FinalScreen,
 } from "./screens";
@@ -21,12 +24,18 @@ function App() {
         return <Outage />;
       case "outOfMinutes":
         return <OutOfMinutes />;
+      case "welcome":
+        return <Welcome />;
+      case "instructions":
+        return <Instructions />;
+      case "motivation":
+        return <Motivation />;
       case "interviewChat":
         return <InterviewChat />;
       case "finalScreen":
         return <FinalScreen />;
       default:
-        return <InterviewChat />;
+        return <Welcome />;
     }
   };
 
